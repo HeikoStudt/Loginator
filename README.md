@@ -6,11 +6,17 @@ Loginator is a high performance log viewer that shows you logs in realtime:
 * Chainsaw (nlog, log4net, log4j, etc.)
 * Logcat (Android)
 
+## Download
+
+You can download the current release ![here](https://github.com/dabeku/Loginator/releases) or by clicking **Releases** above.
+
+## Preview
+
 Here is how it looks like:
 
 ![ScreenShot](https://cloud.githubusercontent.com/assets/14138808/9817745/0aaca424-58a5-11e5-82ca-e791690958d8.png)
 
-![ScreenShot](https://cloud.githubusercontent.com/assets/14138808/9817754/1963b08e-58a5-11e5-85eb-89fc6d253c72.png)
+![ScreenShot](https://cloud.githubusercontent.com/assets/14138808/25998297/a3489e76-3720-11e7-8c9f-60b67423d2c5.png)
 
 ## Some cool features include
 
@@ -21,10 +27,12 @@ Here is how it looks like:
 * Filter output based on log level and expressions
 * Configure log type and port
 
+## Issues
+If the **timestamps are incorrect** (i.e. off by x hours): Remove existing configurations from C:\Users\your-username\AppData\Local\Loginator by simply deleting all folders and restarting the application.
+
 ## TODO (from most to least important)
 
 * Add option to group by application (name only)
-* Alphabetically sort context fields
 * Export function
 * Test with log4j and log4net
 * Documentation for installation
