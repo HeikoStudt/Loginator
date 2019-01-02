@@ -37,7 +37,7 @@ namespace LogApplication.ViewModels {
         private ILogger Logger { get; set; }
         private Receiver Receiver { get; set; }
         private Timer Timer { get; set; }
-        
+
         private LogTimeFormat LogTimeFormat { get; set; }
 
         private bool isActive;
@@ -48,7 +48,7 @@ namespace LogApplication.ViewModels {
                 OnPropertyChanged(nameof(IsActive));
             }
         }
-        
+
         private int numberOfLogsPerApplicationAndLevelInternal;
         private int numberOfLogsPerLevel;
         public int NumberOfLogsPerLevel {
@@ -178,7 +178,7 @@ namespace LogApplication.ViewModels {
                     }
 
                     LogsToInsert.Clear();
-                    
+
                     Timer.Change(TIME_INTERVAL_IN_MILLISECONDS, Timeout.Infinite);
                 }
             });
@@ -215,11 +215,14 @@ namespace LogApplication.ViewModels {
                     }
                     application.AddLog(logToInsert);
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Console.WriteLine("Could not update logs: " + e);
             }
         }
+
+        private Dictionary<string, string[]> DisabledNamespaces = new Dictionary<string, string[]>{
+            
+        };
         
         private void UpdateNamespaces(IEnumerable<LogViewModel> logsToInsert) {
             try {
@@ -234,9 +237,16 @@ namespace LogApplication.ViewModels {
                     if (nsApplication == null) {
                         nsApplication = new NamespaceViewModel(log.Application, application);
                         Namespaces.Add(nsApplication);
+
+                        // disable following namespaces
+                        if (DisabledNamespaces.TryGetValue(log.Application.Split('(')[0], out string[] disabledNamespaces)) {
+                            foreach (var disabledNamespace in disabledNamespaces) {
+                                HandleNamespace(nsApplication, disabledNamespace, application, LoggingLevel.NOT_SET, false);
+                            }
+                        }
                     }
 
-                    HandleNamespace(nsApplication, log.Namespace, application, log.Level, false);
+                    HandleNamespace(nsApplication, log.Namespace, application, log.Level, true);
                 }
 
             } catch (Exception e) {
@@ -245,7 +255,7 @@ namespace LogApplication.ViewModels {
         }
         
 
-        private void HandleNamespace(NamespaceViewModel parent, string nsLogFull, ApplicationViewModel application, LoggingLevel level, bool disabled) {
+        private void HandleNamespace(NamespaceViewModel parent, string nsLogFull, ApplicationViewModel application, LoggingLevel level, bool enabled) {
             // Example nsLogFull: VerbTeX.View (Verbosus was processed before)
 
             // Example: VerbTeX
@@ -262,7 +272,7 @@ namespace LogApplication.ViewModels {
             var nsChild = parent?.Children.FirstOrDefault(m => m.Name == prefix);
             if (nsChild == null) {
                 nsChild = new NamespaceViewModel(prefix, application);
-                nsChild.IsChecked = parent.IsChecked && (!isLeaf || !disabled);
+                nsChild.IsChecked = parent.IsChecked && (!isLeaf || enabled);
                 parent.Children.Add(nsChild);
                 nsChild.Parent = parent;
             }
@@ -271,7 +281,7 @@ namespace LogApplication.ViewModels {
             if (isLeaf) {
                 SetLogCountByLevel(level, nsChild);
             } else {
-                HandleNamespace(nsChild, suffixSuffix, application, level, disabled);
+                HandleNamespace(nsChild, suffixSuffix, application, level, enabled);
             }
         }
 
