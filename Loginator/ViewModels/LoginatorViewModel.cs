@@ -236,47 +236,42 @@ namespace LogApplication.ViewModels {
                         Namespaces.Add(nsApplication);
                     }
 
-                    // Example: Verbosus.VerbTeX.View
-                    string nsLogFull = log.Namespace;
-                    // Example: Verbosus
-                    string nsLogPart = nsLogFull.Split(new string[] { Constants.NAMESPACE_SPLITTER }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                    // Try to get existing namespace with name Verbosus
-                    var nsChild = nsApplication.Children.FirstOrDefault(m => m.Name == nsLogPart);
-                    if (nsChild == null) {
-                        nsChild = new NamespaceViewModel(nsLogPart, application);
-                        nsChild.IsChecked = nsApplication.IsChecked;
-                        nsApplication.Children.Add(nsChild);
-                        nsChild.Parent = nsApplication;
-                    }
-                    if (nsLogFull.Contains(Constants.NAMESPACE_SPLITTER)) {
-                        HandleNamespace(nsChild, nsLogFull.Substring(nsLogFull.IndexOf(Constants.NAMESPACE_SPLITTER) + 1), application, log);
-                    } else {
-                        SetLogCountByLevel(log, nsChild);
-                    }
+                    HandleNamespace(nsApplication, log.Namespace, application, log.Level, false);
                 }
 
             } catch (Exception e) {
                 Console.WriteLine("Could not update namespaces: " + e);
             }
         }
+        
 
-        private void HandleNamespace(NamespaceViewModel parent, string suffix, ApplicationViewModel application, LogViewModel log) {
-            // Example: VerbTeX.View (Verbosus was processed before)
-            string nsLogFull = suffix;
+        private void HandleNamespace(NamespaceViewModel parent, string nsLogFull, ApplicationViewModel application, LoggingLevel level, bool disabled) {
+            // Example nsLogFull: VerbTeX.View (Verbosus was processed before)
+
             // Example: VerbTeX
-            string nsLogPart = nsLogFull.Split(new string[] { Constants.NAMESPACE_SPLITTER }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            var nsLogPart = nsLogFull.Split(new string[] { Constants.NAMESPACE_SPLITTER }, StringSplitOptions.RemoveEmptyEntries);
+            var prefix = nsLogPart.FirstOrDefault();
+
+            // Example: View
+            string suffixSuffix = nsLogFull.Substring(nsLogFull.IndexOf(Constants.NAMESPACE_SPLITTER) + 1);
+            //TODO: it could be faster to string.Join(nsLogPart.Skip(1))?
+
+            bool isLeaf = nsLogPart.Length == 1;
+
             // Try to get existing namespace with name VerbTeX
-            var nsChild = parent.Children.FirstOrDefault(m => m.Name == nsLogPart);
+            var nsChild = parent?.Children.FirstOrDefault(m => m.Name == prefix);
             if (nsChild == null) {
-                nsChild = new NamespaceViewModel(nsLogPart, application);
-                nsChild.IsChecked = parent.IsChecked;
+                nsChild = new NamespaceViewModel(prefix, application);
+                nsChild.IsChecked = parent.IsChecked && (!isLeaf || !disabled);
                 parent.Children.Add(nsChild);
                 nsChild.Parent = parent;
             }
-            if (suffix.Contains(Constants.NAMESPACE_SPLITTER)) {
-                HandleNamespace(nsChild, suffix.Substring(suffix.IndexOf(Constants.NAMESPACE_SPLITTER) + 1), application, log);
+
+            // recurse with invariant nsLogFull.Length
+            if (isLeaf) {
+                SetLogCountByLevel(level, nsChild);
             } else {
-                SetLogCountByLevel(log, nsChild);
+                HandleNamespace(nsChild, suffixSuffix, application, level, disabled);
             }
         }
 
@@ -317,19 +312,19 @@ namespace LogApplication.ViewModels {
             Namespaces.Flatten(x => x.Children).ToList().ForEach(m => m.IsHighlighted = false);
         }
 
-        private void SetLogCountByLevel(LogViewModel log, NamespaceViewModel ns) {
+        private void SetLogCountByLevel(LoggingLevel level, NamespaceViewModel ns) {
             ns.Count++;
-            if (log.Level == LoggingLevel.TRACE) {
+            if (level == LoggingLevel.TRACE) {
                 ns.CountTrace++;
-            } else if (log.Level == LoggingLevel.DEBUG) {
+            } else if (level == LoggingLevel.DEBUG) {
                 ns.CountDebug++;
-            } else if (log.Level == LoggingLevel.INFO) {
+            } else if (level == LoggingLevel.INFO) {
                 ns.CountInfo++;
-            } else if (log.Level == LoggingLevel.WARN) {
+            } else if (level == LoggingLevel.WARN) {
                 ns.CountWarn++;
-            } else if (log.Level == LoggingLevel.ERROR) {
+            } else if (level == LoggingLevel.ERROR) {
                 ns.CountError++;
-            } else if (log.Level == LoggingLevel.FATAL) {
+            } else if (level == LoggingLevel.FATAL) {
                 ns.CountFatal++;
             }
         }
