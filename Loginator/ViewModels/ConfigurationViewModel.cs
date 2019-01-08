@@ -58,6 +58,7 @@ namespace Loginator.ViewModels {
             }
         }
 
+        public Dictionary<string, List<string>> DeactivatedNamespaces { get; }
         public Action CloseAction { get; set; }
 
         public ConfigurationViewModel(IConfigurationDao configurationDao) {
@@ -67,6 +68,7 @@ namespace Loginator.ViewModels {
             PortChainsaw = configuration.PortChainsaw.ToString();
             PortLogcat = configuration.PortLogcat.ToString();
             LogTimeFormat = configuration.LogTimeFormat;
+            DeactivatedNamespaces = configuration.DeactivatedNamespaces; // is configurable in main window
         }
 
         private ICommand cancelChangesCommand;
@@ -101,7 +103,8 @@ namespace Loginator.ViewModels {
                     LogType = LogType,
                     PortChainsaw = Convert.ToInt32(PortChainsaw),
                     PortLogcat = Convert.ToInt32(PortLogcat),
-                    LogTimeFormat = LogTimeFormat
+                    LogTimeFormat = LogTimeFormat,
+                    DeactivatedNamespaces = DeactivatedNamespaces,
                 };
                 ConfigurationDao.Write(configuration);
                 IoC.Get<Receiver>().Initialize(configuration);
@@ -113,9 +116,7 @@ namespace Loginator.ViewModels {
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string property) {
-            if (PropertyChanged != null) {
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
     }
 }

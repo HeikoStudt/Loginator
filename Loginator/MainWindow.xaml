@@ -132,9 +132,7 @@
                 </ListView.View>
             </ListView>
             <GridSplitter Grid.Row="1" ResizeBehavior="BasedOnAlignment" ResizeDirection="Rows" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-            <TreeView Grid.Row="2"
-                ItemsSource="{Binding Namespaces}"
-                    >
+            <TreeView Grid.Row="2" ItemsSource="{Binding Namespaces}">
                 <TreeView.Resources>
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="{Binding Path=IsExpanded}"/>
@@ -143,12 +141,19 @@
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal" Height="18">
+                            <StackPanel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Enable in Log" IsChecked="{Binding IsChecked}" Command="{Binding EnableDisableCommand}" CommandParameter="{Binding}" />
+                                    <MenuItem Header="Disable as Default" Command="{Binding DisableAsDefaultCommand}" CommandParameter="{Binding}" />
+                                </ContextMenu>
+                            </StackPanel.ContextMenu>
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
                                             <Setter Property="Background" Value="LightGoldenrodYellow"></Setter>
                                         </DataTrigger>
+                                        
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Style>

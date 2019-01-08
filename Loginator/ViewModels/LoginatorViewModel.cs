@@ -107,6 +107,17 @@ namespace LogApplication.ViewModels {
         public ObservableCollection<NamespaceViewModel> Namespaces { get; set; }
         public ObservableCollection<ApplicationViewModel> Applications { get; set; }
 
+        private DisabledNamespacesViewModel _centrallyDisabledNamespacesViewModel;
+        public DisabledNamespacesViewModel CentrallyDisabledNamespacesViewModel {
+            get { return _centrallyDisabledNamespacesViewModel; }
+            set {
+                _centrallyDisabledNamespacesViewModel = value;
+                // disable in all other apps?
+                //SetNamespaceHighlight(selectedLog);
+                OnPropertyChanged(nameof(CentrallyDisabledNamespacesViewModel));
+            }
+        }
+
         private NamespaceViewModel _selectedNamespaceViewModel;
         public NamespaceViewModel SelectedNamespaceViewModel {
             get { return _selectedNamespaceViewModel; }
@@ -134,11 +145,14 @@ namespace LogApplication.ViewModels {
             LogsToInsert = new List<LogViewModel>();
             Namespaces = new ObservableCollection<NamespaceViewModel>();
             Applications = new ObservableCollection<ApplicationViewModel>();
+            CentrallyDisabledNamespacesViewModel = new DisabledNamespacesViewModel(configurationDao);
         }
 
         private void ConfigurationDao_OnConfigurationChanged(object sender, EventArgs e) {
             Logger.Info("[ConfigurationDao_OnConfigurationChanged] Configuration changed.");
-            LogTimeFormat = ConfigurationDao.Read().LogTimeFormat;
+            var readConfig = ConfigurationDao.Read();
+            LogTimeFormat = readConfig.LogTimeFormat;
+            //DisabledNamespaces = readConfig.DeactivatedNamespaces; would override the current settings??
         }
 
         public void StartListener() {
@@ -219,10 +233,6 @@ namespace LogApplication.ViewModels {
                 Console.WriteLine("Could not update logs: " + e);
             }
         }
-
-        private Dictionary<string, string[]> DisabledNamespaces = new Dictionary<string, string[]>{
-            
-        };
         
         private void UpdateNamespaces(IEnumerable<LogViewModel> logsToInsert) {
             try {
@@ -235,14 +245,13 @@ namespace LogApplication.ViewModels {
                     // Try to get existing root namespace with name of application
                     var nsApplication = Namespaces.FirstOrDefault(m => m.Name == log.Application);
                     if (nsApplication == null) {
-                        nsApplication = new NamespaceViewModel(log.Application, application);
+                        nsApplication = new NamespaceViewModel(log.Application, application, this);
                         Namespaces.Add(nsApplication);
 
                         // disable following namespaces
-                        if (DisabledNamespaces.TryGetValue(log.Application.Split('(')[0], out string[] disabledNamespaces)) {
-                            foreach (var disabledNamespace in disabledNamespaces) {
-                                HandleNamespace(nsApplication, disabledNamespace, application, LoggingLevel.NOT_SET, false);
-                            }
+                        var listPredisabled = CentrallyDisabledNamespacesViewModel.TryGetPredisabled(log.Application);
+                        foreach (var disabledNamespace in listPredisabled) {
+                            HandleNamespace(nsApplication, disabledNamespace, application, LoggingLevel.NOT_SET, false);
                         }
                     }
 
@@ -271,7 +280,7 @@ namespace LogApplication.ViewModels {
             // Try to get existing namespace with name VerbTeX
             var nsChild = parent?.Children.FirstOrDefault(m => m.Name == prefix);
             if (nsChild == null) {
-                nsChild = new NamespaceViewModel(prefix, application);
+                nsChild = new NamespaceViewModel(prefix, application, this);
                 nsChild.IsChecked = parent.IsChecked && (!isLeaf || enabled);
                 parent.Children.Add(nsChild);
                 nsChild.Parent = parent;
@@ -453,9 +462,7 @@ namespace LogApplication.ViewModels {
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string property) {
-            if (PropertyChanged != null) {
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
     }
 }

@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
 using Common;
 using Loginator.ViewModels;
+using GalaSoft.MvvmLight.Command;
+using System.Windows.Input;
+using System.Windows;
 
 namespace LogApplication.ViewModels {
 
@@ -141,13 +144,15 @@ namespace LogApplication.ViewModels {
         public ObservableCollection<NamespaceViewModel> Children { get; set; }
 
         private ApplicationViewModel ApplicationViewModel { get; set; }
+        private LoginatorViewModel LoginatorViewModel { get; }
 
-        public NamespaceViewModel(string name, ApplicationViewModel applicationViewModel) {
+        public NamespaceViewModel(string name, ApplicationViewModel applicationViewModel, LoginatorViewModel loginatorViewModel) {
             IsChecked = true;
             IsExpanded = true;
             Name = name;
             Children = new ObservableCollection<NamespaceViewModel>();
             ApplicationViewModel = applicationViewModel;
+            LoginatorViewModel = loginatorViewModel;
         }
 
         public string Fullname {
@@ -161,13 +166,54 @@ namespace LogApplication.ViewModels {
                 return fullname;
             }
         }
-        
+
+        public string NamespaceName {
+            get {
+                string fullname = Name;
+                var parent = Parent;
+                while (parent != null && parent.Name != ApplicationViewModel.Name) {
+                    fullname = parent.Name + Constants.NAMESPACE_SPLITTER + fullname;
+                    parent = parent.Parent;
+                }
+                return fullname;
+            }
+        }
+
+        private ICommand disableAsDefaultCommand;
+        public ICommand DisableAsDefaultCommand {
+            get {
+                return disableAsDefaultCommand ?? (disableAsDefaultCommand = new RelayCommand<NamespaceViewModel>(DisableAsDefault, CanDisableAsDefault));
+            }
+        }
+        private bool CanDisableAsDefault(NamespaceViewModel serverRule) {
+            return true;
+        }
+        private void DisableAsDefault(NamespaceViewModel serverRule) {
+            try {
+                LoginatorViewModel.CentrallyDisabledNamespacesViewModel.AddAsDefault(ApplicationViewModel.Name, NamespaceName);
+                IsChecked = false;
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Stop, MessageBoxResult.OK);
+            }
+        }
+
+        private ICommand enableDisableCommand;
+        public ICommand EnableDisableCommand {
+            get {
+                return enableDisableCommand ?? (enableDisableCommand = new RelayCommand<NamespaceViewModel>(EnableDisable, CanEnableDisable));
+            }
+        }
+        private bool CanEnableDisable(NamespaceViewModel serverRule) {
+            return true;
+        }
+        private void EnableDisable(NamespaceViewModel serverRule) {
+            IsChecked = !IsChecked;
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string property) {
-            if (PropertyChanged != null) {
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
     }
 }

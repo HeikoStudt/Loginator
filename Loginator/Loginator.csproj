@@ -100,6 +100,7 @@
     <Compile Include="Converter\RadioButtonCheckedConverter.cs" />
     <Compile Include="ViewModels\ConfigurationViewModel.cs" />
     <Compile Include="ViewModels\ApplicationViewModel.cs" />
+    <Compile Include="ViewModels\DisabledNamespacesViewModel.cs" />
     <Compile Include="ViewModels\LogViewModel.cs" />
     <Compile Include="ViewModels\LoginatorViewModel.cs" />
     <Compile Include="ViewModels\NamespaceViewModel.cs" />
